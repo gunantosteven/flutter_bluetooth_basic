@@ -22,7 +22,7 @@ class BluetoothManager {
   BluetoothManager._() {
     _channel.setMethodCallHandler((MethodCall call) {
       _methodStreamController.add(call);
-      return;
+      return Future(() => null);
     });
   }
 
@@ -49,7 +49,7 @@ class BluetoothManager {
   PublishSubject _stopScanPill = new PublishSubject();
 
   /// Gets the current state of the Bluetooth module
-  Stream<int> get state async* {
+  Stream<int?> get state async* {
     yield await _channel.invokeMethod('state').then((s) => s);
 
     yield* _stateChannel.receiveBroadcastStream().map((s) => s);
@@ -58,7 +58,7 @@ class BluetoothManager {
   /// Starts a scan for Bluetooth Low Energy devices
   /// Timeout closes the stream after a specified [Duration]
   Stream<BluetoothDevice> scan({
-    Duration timeout,
+    Duration? timeout,
   }) async* {
     if (_isScanning.value == true) {
       throw Exception('Another scan is already in progress.');
@@ -92,9 +92,9 @@ class BluetoothManager {
         .doOnDone(stopScan)
         .map((map) {
       final device = BluetoothDevice.fromJson(Map<String, dynamic>.from(map));
-      final List<BluetoothDevice> list = _scanResults.value;
+      final List<BluetoothDevice>? list = _scanResults.value;
       int newIndex = -1;
-      list.asMap().forEach((index, e) {
+      list!.asMap().forEach((index, e) {
         if (e.address == device.address) {
           newIndex = index;
         }
@@ -111,7 +111,7 @@ class BluetoothManager {
   }
 
   Future startScan({
-    Duration timeout,
+    Duration? timeout,
   }) async {
     await scan(timeout: timeout).drain();
     return _scanResults.value;
